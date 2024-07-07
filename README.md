@@ -1,1 +1,1 @@
-See pipeline.pdf and pipeline_docu.xlxs for a detailed description of the full pipeline. 
+See pipeline.pdf and pipeline_docu.xlxs for a detailed description of the scripts.
