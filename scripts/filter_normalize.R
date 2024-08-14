@@ -1,4 +1,5 @@
 # This script is intended to import raw gene counts >> filter out genes >> normalize. Output: a normalized phenotype matrix. 
+dir.create(file.path('./data', 'pop_standardized_data'), showWarnings = F)
 counts_raw <- counts_population %>% select(-c('Name','Description')) %>% as.matrix
 
 # Use two methods from scran to identify sufficiently variable genes for downstream analysis and subset the data.
@@ -22,7 +23,13 @@ standardized_data <- corral::corral_preproc(counts_variable, rtype = "freemantuk
 counts_population  <- data.frame(Name = counts_population$Name[counts_gene_shared],
                                 Description = counts_population$Description[counts_gene_shared],
                                 standardized_data)
-
+write_rds(standardized_data ,str_c('./data/pop_standardized_data/',pop_name, 'standardized_data.rds' ))
+write_rds(counts_population, str_c('./data/pop_standardized_data/',pop_name, 'counts_population.rds' ))
+if(is.null(genes_all_pops)){
+    genes_all_pops <- counts_population$Name
+}else{
+ genes_all_pops <- intersect(genes_all_pops, counts_population$Name)
+}
 
 
 

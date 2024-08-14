@@ -18,7 +18,8 @@ library(vroom)
 library(rtracklayer)
 
 setwd(here()) # set up the main folder as directory, e.g. ~/user/.../pipe_repo 
-
+dir.create(file.path('./data', 'pop_standardized_data'), showWarnings = F)
+genes_all_pops <- NULL # stores intersection genes between all populations
 
 ## This script imports 
 # a. Ancestry PCs
@@ -35,14 +36,30 @@ setwd(here()) # set up the main folder as directory, e.g. ~/user/.../pipe_repo
 populations <- c("ESN", "GWD", "LWK", "MSL", "YRI", "MKK")
 counts_aggregated <- read_tsv('./data/counts_aggregated.txt')
 for( pop_name in populations){
+   
     print(pop_name) 
-    compute_pheno_pcs <- !file.exists(str_c('./data/pheno_pcs/',pop_name,'_pcs_pheno.rds'))
-    compute_ances_pcs <- !file.exists(str_c('./data/ancestry_pcs/',pop_name,'_pcs_ances.rds'))
-
+    
     source('./scripts/get_pop_data.R')
     
     source('./scripts/filter_normalize.R')
+} 
+# genes_all_pops contains the intersection genes across all 6 populations. 
+## Note for later: make the script removr the directory 'pop_standarized_data' when done 
+
+
+
+for( pop_name in populations){
+    counts_population <- read_rds(str_c('./data/pop_standardized_data/',pop_name, 'counts_population.rds' ))
+
+    keep_rows <- which(counts_population$Name %in% genes_all_pops)
+
+    counts_population <- counts_population[keep_rows,]
+
+    standardized_data <- read_rds(str_c('./data/pop_standardized_data/',pop_name, 'standardized_data.rds' ))[keep_rows,]
     
+    compute_pheno_pcs <- T # !file.exists(str_c('./data/pheno_pcs/',pop_name,'_pcs_pheno.rds'))
+    compute_ances_pcs <- !file.exists(str_c('./data/ancestry_pcs/',pop_name,'_pcs_ances.rds'))
+
     if (compute_pheno_pcs) source('./scripts/pheno_pcs.R')
     
     if (compute_ances_pcs) source('./scripts/ancestry_pcs.R')
@@ -52,11 +69,4 @@ for( pop_name in populations){
 
 
 
-#cov_file <- read_tsv('./data/covariates/MKK_covariates.txt')
-#cov_file_pheno <- readRDS('./data/pheno_pcs/MKK_pcs_pheno.rds')
-#cov_file_ances<- readRDS('./data/ancestry_pcs/MKK_pcs_ances.rds')
 
-
-#str(cov_file_pheno)
-#str(cov_file_ances)
-#unique(cov_file$variable)
