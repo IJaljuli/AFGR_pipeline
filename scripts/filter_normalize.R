@@ -18,7 +18,7 @@ counts_variable <- counts_raw[counts_gene_shared, ]
 # Use the standardized_data for QTL mapping directly.
 # Also use corral for counts data
 # For other proportions/lognormal data types just use inverse normal, because there are not "library sizes"
-standardized_data <- corral::corral_preproc(counts_variable) %>% apply(1, RNOmni::RankNorm) %>% t()
+standardized_data <- corral::corral_preproc(counts_variable, rtype = "freemantukey") %>% apply(1, RNOmni::RankNorm) %>% t()
 counts_population  <- data.frame(Name = counts_population$Name[counts_gene_shared],
                                 Description = counts_population$Description[counts_gene_shared],
                                 standardized_data)
