@@ -5,40 +5,44 @@
 #if( !get_bam ){
 #}
 
+
 my.bam.path <- './data/bed_bim_fam/'
 my.PCs.path <- './data/ancestry_pcs/'
 # pop_name must be provided in sourcing script
 
 
+
 dir.create(file.path('./data', 'gds'), showWarnings = F)
-(get_gds <- !file.exists(str_c("./data/gds/all", pop_name, "30x.ID.gds", sep = ".")))
+(get_gds <- !file.exists(str_c("./data/gds/collapsed.hwepass01.withgnomad.var.merged.processedMKK.split1kG30x", pop_name, "maf05.geno01.gds", sep = ".")))
+get_gds <- T
 
 dir.create(file.path('./data', 'ancestry_pcs'), showWarnings = F)
 (do_ldpruning <- !(file.exists('./data/ancestry_pcs/pruned_variants.rds') | file.exists(str_c('./ancestry_pcs/', pop_name,  "_pruned_variants.rds", sep = '')) ))
-
+do_ldpruning <- T
 
 
 ## Functions -------------------------------------------------------------------------
 make_gds <- function(population_name) {
-    bed_name <- str_c("all", population_name, "30x.ID.bed", sep = ".")
+    bed_name <- str_c("collapsed.hwepass01.withgnomad.var.merged.processedMKK.split1kG30x", population_name, "maf05.geno01.bed", sep = ".")
     bed_name <- str_c(my.bam.path,bed_name)
    
-    bim_name <- str_c("all", population_name, "30x.ID.bim", sep = ".")
+    bim_name <- str_c("collapsed.hwepass01.withgnomad.var.merged.processedMKK.split1kG30x", population_name, "maf05.geno01.bim", sep = ".")
     bim_name <- str_c(my.bam.path, bim_name) 
 
-    fam_name <- str_c("all", population_name, "30x.ID.fam", sep = ".") 
+    fam_name <- str_c("collapsed.hwepass01.withgnomad.var.merged.processedMKK.split1kG30x", population_name, "maf05.geno01.fam", sep = ".") 
     fam_name <- str_c(my.bam.path, fam_name) 
     
-    gds_name <- str_c("./data/gds/all", population_name, "30x.ID.gds", sep = ".")
+    gds_name <- str_c("./data/gds/collapsed.hwepass01.withgnomad.var.merged.processedMKK.split1kG30x", population_name, "maf05.geno01.gds", sep = ".")
     snpgdsBED2GDS(bed.fn = bed_name, 
                   bim.fn = bim_name, 
                   fam.fn = fam_name, 
                   out.gdsfn = gds_name)
 }
 
+
 ld_prune <- function(population_name) {
-    gds_name <- str_c("./data/gds/all", population_name, "30x.ID.gds", sep = ".")
-    gds_file <- snpgdsOpen(gds_name)
+    gds_name <- str_c("./data/gds/collapsed.hwepass01.withgnomad.var.merged.processedMKK.split1kG30x", population_name, "maf05.geno01.gds", sep = ".")
+    gds_file <<- snpgdsOpen(gds_name)
     pruned_snps <- snpgdsLDpruning(gds_file, method = "corr", slide.max.bp = 10e6, ld.threshold = sqrt(0.1), verbose = TRUE, num.thread = 1L)
     snps_vector <- unlist(pruned_snps, use.names = FALSE) 
     snps_vector
@@ -50,8 +54,10 @@ choose_npcs <- function(pca_estimate) {
 }
 
 genotype_pcs <- function(population_name, pruned_variants) {
-    gds_name <- str_c("./data/gds/all", population_name, "30x.ID.gds", sep = ".")
-    gds_file <- snpgdsOpen(gds_name)
+    gds_name <- str_c("./data/gds/collapsed.hwepass01.withgnomad.var.merged.processedMKK.split1kG30x", population_name, "maf05.geno01.gds", sep = ".")
+    if (is.null(gds_file)) {
+        gds_file <- snpgdsOpen(gds_name)
+    }
     gds_pca <- snpgdsPCA(gds_file, snp.id = pruned_variants[[population_name]], algorithm = "exact", eigen.method = "DSPEV", eigen.cnt = -1)
     snpgdsClose(gds_file)
     n_pcs <- choose_npcs(gds_pca)
@@ -81,19 +87,21 @@ extract_eigenvalues <- function(pca_estimate, population_name) {
 ### These files need to be produced once prior to analysis. Due to the long time to produce such files, they are provided in the main directory. Do not run these lines unless the described files were not initially provided or the provided files were changed.
 
 ## Create GDS files for all populations
+gds_file <- NULL
 if( get_gds){
-    if (pop_name == 'MKK'){
-        snpgdsBED2GDS(bed.fn = str_c(my.bam.path,"/MKK.filtered.biallelic.maf05.autosomal.chr.id.bed"),
-                  bim.fn = str_c(my.bam.path,"/MKK.filtered.biallelic.maf05.autosomal.chr.id.bim"),
-                  fam.fn =str_c(my.bam.path,"/MKK.filtered.biallelic.maf05.autosomal.chr.id.fam"),
-                  out.gdsfn = "./data/gds/all.MKK.30x.ID.gds")
-    }else{
+    # if (pop_name == 'MKK'){
+    #     snpgdsBED2GDS(bed.fn = str_c(my.bam.path,"/MKK.filtered.biallelic.maf05.autosomal.chr.id.bed"),
+    #               bim.fn = str_c(my.bam.path,"/MKK.filtered.biallelic.maf05.autosomal.chr.id.bim"),
+    #               fam.fn =str_c(my.bam.path,"/MKK.filtered.biallelic.maf05.autosomal.chr.id.fam"),
+    #               out.gdsfn = "./data/gds/all.MKK.30x.ID.gds")
+    # }else{
         make_gds(pop_name)
-    }
+    # }
 }
 
 # Variant pruning: Pruned variants are variants which are independent under LD up to a specific LD cutoff (here we allow pairwise LD < sqrt(0.1).
 if( do_ldpruning ){
+    message('LD prining in process')
     pruned_variants <- list(ld_prune(pop_name))
     names(pruned_variants) <- pop_name # populations
     write_rds(pruned_variants,str_c(pop_name,  "pruned_variants.rds", sep = '_'))
@@ -108,16 +116,15 @@ if( do_ldpruning ){
 # Find SVD decomposition >>  select top npcs eigenvectors based on their eigen values where npcs is calculated via the Gavish-Dunnoho formula.
 (pop_pca <- genotype_pcs(pop_name, pruned_variants))
 
-if( pop_name == 'MKK'){
-        id_key_path <- "./data/all_MKK_166_newIDS.csv"
-        id_key <- read_csv(id_key_path, col_names = FALSE) %>% filter(is.na(X3)) %>% select(-X3)
-        txt1 <- paste(id_key$X1, id_key$X2, sep = "' ~ '") # creating coding in txt1 
-        txt1 <- paste0("'",txt1)
-        txt1 <- paste0(txt1,"'")
-        txt2 <- paste0(c('case_match(colnames(pop_pca)', txt1, ' .default = colnames(pop_pca))'), collapse = ', ')
-        colnames(pop_pca) <- eval(parse(text=txt2)) 
-
-}
+# if( pop_name == 'MKK'){
+#         id_key_path <- './data/MKK.dictionary.txt' #"./data/all_MKK_166_newIDS.csv"
+#         id_key <- read_tsv(id_key_path, col_names = FALSE) %>% drop_na()
+#         txt1 <- paste(id_key$X1, id_key$X2, sep = "' ~ '") # creating coding in txt1 
+#         txt1 <- paste0("'",txt1)
+#         txt1 <- paste0(txt1,"'")
+#         txt2 <- paste0(c('case_match(colnames(pop_pca)', txt1, ' .default = colnames(pop_pca))'), collapse = ', ')
+#         colnames(pop_pca) <- eval(parse(text=txt2)) 
+# }
 
 if(!is.null(pop_pca)){
     pop_pca <- cbind(variable = paste0('ancestry_PC', 1:nrow(pop_pca)), pop_pca)

@@ -34,7 +34,7 @@ genes_all_pops <- NULL # stores intersection genes between all populations
 # Remeber: ----------------------------------------------------------------------
 # Need only to correct for ancestry PCs for MKK; we found that for all other populations, non of the eigen values passed the Gavish Dunnoho threshold, except in MKK.    
 populations <- c("ESN", "GWD", "LWK", "MSL", "YRI", "MKK")
-counts_aggregated <- read_tsv('./data/counts_aggregated.txt')
+counts_aggregated <- read_tsv('./data/counts_aggregated_GM2NA.txt')
 for( pop_name in populations){
    
     print(pop_name) 
@@ -57,8 +57,8 @@ for( pop_name in populations){
 
     standardized_data <- read_rds(str_c('./data/pop_standardized_data/',pop_name, 'standardized_data.rds' ))[keep_rows,]
     
-    compute_pheno_pcs <- T # !file.exists(str_c('./data/pheno_pcs/',pop_name,'_pcs_pheno.rds'))
-    compute_ances_pcs <- !file.exists(str_c('./data/ancestry_pcs/',pop_name,'_pcs_ances.rds'))
+    compute_pheno_pcs <- T # (!file.exists(str_c('./data/pheno_pcs/',pop_name,'_pcs_pheno.rds')))
+    compute_ances_pcs <- T # (!file.exists(str_c('./data/ancestry_pcs/',pop_name,'_pcs_ances.rds')))
 
     if (compute_pheno_pcs) source('./scripts/pheno_pcs.R')
     

@@ -8,42 +8,33 @@
 #SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 #SCRIPT_DIR
 
-shopt -s expand_aliases
-
-alias tensorqtl="micromamba run --prefix=/oak/stanford/groups/smontgom/jaljuli/micromamba/envs/tensorqtl tensorqtl"
+# shopt -s expand_aliases
 
 # From here, you can just run tensorqtl
 # Need to make plink files from VCF
-echo popName
 # For loop runs tensorQTL in cis mode (result: eQTLs)  on each population separately
-for popName in ESN; do   # GWD LWK MSL YRI ; do # MKK    
+for popName in ESN GWD LWK MSL YRI MKK; do     
     
-    ba_path="/oak/stanford/groups/smontgom/jaljuli/afgr_eqtls/pipe_repo/data/bed_bim_fam/all.${popName}.30x.ID"
+    echo $popName
+
+    ba_path="/oak/stanford/groups/smontgom/jaljuli/afgr_eqtls/pipe_repo/data/bed_bim_fam/collapsed.hwepass01.withgnomad.var.merged.processedMKK.split1kG30x.${popName}.maf05.geno01"
+
 
     bed_path="/oak/stanford/groups/smontgom/jaljuli/afgr_eqtls/pipe_repo/data/bed_bim_fam/${popName}_phenotype.bed"
 
     covariates_path="/oak/stanford/groups/smontgom/jaljuli/afgr_eqtls/pipe_repo/data/covariates/${popName}_covariates.txt"
 
-    #tensorqtl \
-        #"${ba_path}" \
-        #"${bed_path}" \
-        #${popName}_\
-        #--covariates "${covariates_path}" \
-        #--mode cis \
-        #--maf_threshold 0.05 \
-        #--seed 1 \
-        #--output_dir /oak/stanford/groups/smontgom/jaljuli/afgr_eqtls/pipe_repo/output/cis
-
+    export PATH="${HOME}/.pixi/bin:/oak/stanford/groups/smontgom/jaljuli/pixi/bin:${PATH}"
     tensorqtl \
         "${ba_path}" \
         "${bed_path}" \
-        ${popName}_\
+        ${popName}_ \
         --covariates "${covariates_path}" \
-        --mode cis_susie \
+        --mode cis_nominal \
         --maf_threshold 0.05 \
+        --pval_threshold 1 \
         --seed 1 \
-        --cis_output /oak/stanford/groups/smontgom/jaljuli/afgr_eqtls/pipe_repo/output/cis/${popName}_.cis_qtl.txt.gz \
-        --output_dir /oak/stanford/groups/smontgom/jaljuli/afgr_eqtls/pipe_repo/output/cis_susie
+        --output_dir /oak/stanford/groups/smontgom/jaljuli/afgr_eqtls/pipe_repo/output/cis_parquet
 
 done
 
