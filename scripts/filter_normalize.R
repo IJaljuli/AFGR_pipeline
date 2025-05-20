@@ -31,5 +31,10 @@ if(is.null(genes_all_pops)){
  genes_all_pops <- intersect(genes_all_pops, counts_population$Name)
 }
 
-
-
+dir.create(file.path('./data', 'pop_standardized_data_splicing'), showWarnings = F)
+splice_junctions_population_raw <- read_tsv(file.path("./data/pop_splicing", str_c(pop_name, "_splice_junctions.tsv"))) %>%
+    column_to_rownames("cluster") %>%
+    as.matrix
+standardized_data_splicing <- apply(1, RNOmni::RankNorm) %>% t
+splice_junctions_population <- data.frame(cluster = rownames(splice_junctions_population_raw), standardized_data_splicing)
+write_rds(standardized_data_splicing, str_c('./data/pop_standardized_data_splicing/', pop_name, 'standardized_data_splicing.rds' ))

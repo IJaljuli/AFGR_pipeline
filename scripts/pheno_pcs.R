@@ -26,3 +26,31 @@ pca_eigenvectors <- cbind(variable = paste0('phenotype_PC', 1:n_pcs), pca_eigenv
 }
 
 write_rds(pca_eigenvectors, str_c('./data/pheno_pcs/',pop_name, '_pcs_pheno.rds'))
+
+dir.create(file.path('./data', 'pheno_pcs_splicing'), showWarnings = F)
+
+# Run PCA for hidden factor estimation.
+# Use the Gavish-Donoho threshold to choose the number of PCs.
+# Alternatively, can use chooseMarcenkoPastur() for the less conservative Marcenko-Pastur method.
+pca_standardized_splicing <- PCAtools::pca(standardized_data_splicing, BSPARAM = BiocSingular::ExactParam())
+(n_pcs_splicing <- PCAtools::chooseGavishDonoho(standardized_data_splicing, var.explained = pca_standardized_splicing$sdev^2, noise = 1))
+
+# Return to this after dan responds ------------------------------------------------------------------------------------
+## If the number of select PCs is 1, it may actually be 0 or 1, so we need to manually check how many eigenvalues 
+ if (n_pcs_splicing == 1) {
+     eigenval_limit_splicing <- attr(n_pcs_splicing, "limit")
+     n_pcs_splicing <- sum((pca_standardized_splicing$sdev^2) > eigenval_limit_splicing)
+ }
+
+pca_eigenvectors_splicing <- NULL
+
+if( n_pcs_splicing > 0 ){
+# You will probably use this object for your hidden factors.
+pca_eigenvectors_splicing <- pca_standardized_splicing$rotated[,1:n_pcs_splicing] %>% t %>% as.data.frame
+## Optionally, run rank normal transformation on PCs - this is not normally done but is provided here as an example.
+## Iman doesn't like this step, will be using pca_eigenvectors object. 
+# pca_eigenvectors_standardized <- apply(pca_standardized$rotated[,1:n_pcs], 2, RNOmni::RankNorm)}
+pca_eigenvectors_splicing <- cbind(variable = paste0('phenotype_PC', 1:n_pcs_splicing), pca_eigenvectors_splicing)
+}
+
+write_rds(pca_eigenvectors_splicing, str_c('./data/pheno_pcs_splicing/',pop_name, '_pcs_pheno_splicing.rds'))
